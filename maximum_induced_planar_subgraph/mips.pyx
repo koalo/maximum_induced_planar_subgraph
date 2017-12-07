@@ -8,6 +8,25 @@ import planarity
 def planarise_methods():
     return ['VR','VA','Hybrid','HL','OP1+EPS','PT','PT+EPS','VSR+EPS','VSR','Grow Singletons','Grow Tree','IS','T','OP1','OP2','Mixed']
 
+def approximate_mips(graph,methods=None):
+    if not methods:
+        methods = planarise_methods()
+
+    bestP = 0
+    bestPGraph = None
+
+    M = MIPSGraph(graph)
+
+    for method in methods:
+        P = M.planarise(method)
+        if P > bestP:
+            K = M.member_pgraph()
+            if K.is_planar():
+                bestP = P
+                bestPGraph = K
+
+    return (bestP,bestPGraph)
+
 cdef class MIPSGraph:
     cdef cplanar.Vertex* G
     cdef int size
@@ -80,3 +99,10 @@ cdef class MIPSGraph:
 
     def member_nodes(self):
         return [i for i in range(self.size) if self.G[i].member]
+
+    def member_adjlists(self):
+        nodes = self.member_nodes()
+        return {v: [w for w in self.G[v].adjVerts[:self.G[v].degree] if w in nodes] for v in nodes}
+
+    def member_pgraph(self):
+        return planarity.PGraph(self.member_adjlists())
