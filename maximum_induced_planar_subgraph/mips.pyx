@@ -37,13 +37,16 @@ cdef class MIPSGraph:
         else:
             pgraph = graph
 
-        nodes = pgraph.nodes()
+        node_for_idx = pgraph.nodes()
+        idx_for_node = {node_for_idx[i]:i for i in range(len(node_for_idx))}
+        nodes = len(node_for_idx)
+
         edges = pgraph.edges()
-        self.size = len(nodes)
-        self.G = cplanar.initGraph(len(nodes))
-        for v in nodes:
+        self.size = nodes
+        self.G = cplanar.initGraph(nodes)
+        for v in range(nodes):
             # generate unique list of neighbors (in both directions!)
-            neighbors = list(set([b for (a,b) in edges if a == v] + [a for (a,b) in edges if b == v]))
+            neighbors = list(set([idx_for_node[b] for (a,b) in edges if a == node_for_idx[v]] + [idx_for_node[a] for (a,b) in edges if b == node_for_idx[v]]))
             self.G[v].degree = len(neighbors)
             self.G[v].adjVerts = <int*>malloc(sizeof(int)*self.G[v].degree)
             for i in range(len(neighbors)):
