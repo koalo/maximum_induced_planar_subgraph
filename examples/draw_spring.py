@@ -18,6 +18,19 @@ networkx.draw(G,with_labels=True)
 # If found, plot
 if P > 0:
     plt.figure()
-    planarity.draw(K)
+    K.embed_drawplanar()
+    J = planarity.networkx_graph(K)
+
+    pos = {}
+    for node, data in J.nodes(data=True):
+        print(data)
+        y = data['pos']
+        xb = data['start']
+        xe = data['end']
+        x = int((xe+xb)/2)
+        pos[node] = (x,y)
+
+    pos = networkx.spring_layout(J,pos=pos)
+    networkx.draw(J, pos=pos, with_labels=True)
 
 plt.show()
