@@ -30,6 +30,8 @@ def approximate_mips(graph,methods=None):
 cdef class MIPSGraph:
     cdef cplanar.Vertex* G
     cdef int size
+    cdef object node_for_idx
+    cdef object idx_for_node
 
     def __init__(self,graph):
         if not hasattr(graph,'embed_planar'):
@@ -37,16 +39,16 @@ cdef class MIPSGraph:
         else:
             pgraph = graph
 
-        node_for_idx = pgraph.nodes()
-        idx_for_node = {node_for_idx[i]:i for i in range(len(node_for_idx))}
-        nodes = len(node_for_idx)
+        self.node_for_idx = pgraph.nodes()
+        self.idx_for_node = {self.node_for_idx[i]:i for i in range(len(self.node_for_idx))}
+        nodes = len(self.node_for_idx)
 
         edges = pgraph.edges()
         self.size = nodes
         self.G = cplanar.initGraph(nodes)
         for v in range(nodes):
             # generate unique list of neighbors (in both directions!)
-            neighbors = list(set([idx_for_node[b] for (a,b) in edges if a == node_for_idx[v]] + [idx_for_node[a] for (a,b) in edges if b == node_for_idx[v]]))
+            neighbors = list(set([self.idx_for_node[b] for (a,b) in edges if a == self.node_for_idx[v]] + [self.idx_for_node[a] for (a,b) in edges if b == self.node_for_idx[v]]))
             self.G[v].degree = len(neighbors)
             self.G[v].adjVerts = <int*>malloc(sizeof(int)*self.G[v].degree)
             for i in range(len(neighbors)):
@@ -101,11 +103,11 @@ cdef class MIPSGraph:
         return P
 
     def member_nodes(self):
-        return [i for i in range(self.size) if self.G[i].member]
+        return [self.node_for_idx[i] for i in range(self.size) if self.G[i].member]
 
     def member_adjlists(self):
-        nodes = self.member_nodes()
-        return {v: [w for w in self.G[v].adjVerts[:self.G[v].degree] if w in nodes] for v in nodes}
+        nodes = [i for i in range(self.size) if self.G[i].member]
+        return {self.node_for_idx[v]: [self.node_for_idx[w] for w in self.G[v].adjVerts[:self.G[v].degree] if w in nodes] for v in nodes}
 
     def member_pgraph(self):
         return planarity.PGraph(self.member_adjlists())
